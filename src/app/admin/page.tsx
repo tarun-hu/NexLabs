@@ -331,7 +331,7 @@ export default function AdminPage() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">No projects found</h3>
-                <p className="text-slate-400 max-w-sm mx-auto">There are no projects matching the current filter. Select "All Projects" to view the entire pipeline.</p>
+                <p className="text-slate-400 max-w-sm mx-auto">There are no projects matching the current filter. Select &quot;All Projects&quot; to view the entire pipeline.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
