@@ -26,7 +26,7 @@ export async function GET() {
     const { data: projects, error } = await supabaseAdmin
       .from('projects')
       .select('*')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${user.id},client_email.eq.${session.user.email}`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

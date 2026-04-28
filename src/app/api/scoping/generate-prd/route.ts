@@ -116,9 +116,11 @@ export async function POST(req: NextRequest) {
         timeline: submission.timeline,
         budget_range: submission.budget_range,
         ai_generated_prd: prd,
-        status: 'discovery',
+        status: 'quoted', // Setting to quoted since AI provides an initial quote
         client_email: submission.email,
         user_id: user?.id || null,
+        quote_amount: prd.quote_range_low ? prd.quote_range_low * 100 : null, // Store in cents
+        quote_notes: prd.quote_range_low && prd.quote_range_high ? `AI Estimated Range: $${prd.quote_range_low.toLocaleString()} - $${prd.quote_range_high.toLocaleString()}\nThis is an initial AI estimate based on your PRD. Our team will review this shortly.` : null,
       })
       .select()
       .single();
