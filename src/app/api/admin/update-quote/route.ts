@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     // Send email if status changed
-    const clientEmail = originalProject.client_email || (originalProject.users as any)?.email;
+    const clientEmail = originalProject.client_email || (originalProject.users as { email?: string })?.email;
     
     if (status && status !== originalProject.status && clientEmail && process.env.RESEND_API_KEY) {
       const isRejected = status === 'rejected';
