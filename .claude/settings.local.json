@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init *)",
+      "Bash(npx create-next-app@latest *)",
+      "Bash(npx create-next-app@14 *)",
+      "Bash(npx *)",
+      "Bash(mv nexlabs-temp/* .)",
+      "Bash(mv nexlabs-temp/.* .)",
+      "Bash(rmdir nexlabs-temp *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
