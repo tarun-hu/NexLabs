@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
         // Upsert user in database on sign-in
-        await supabaseAdmin
+        const { data: dbUser } = await supabaseAdmin
           .from('users')
           .upsert(
             {
@@ -23,7 +23,18 @@ export const authOptions: NextAuthOptions = {
             {
               onConflict: 'email',
             }
-          );
+          )
+          .select()
+          .single();
+
+        if (dbUser && user.email) {
+          // Link any projects created before the user signed up
+          await supabaseAdmin
+            .from('projects')
+            .update({ user_id: dbUser.id })
+            .eq('client_email', user.email)
+            .is('user_id', null);
+        }
       }
       return true;
     },

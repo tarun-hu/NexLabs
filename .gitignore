@@ -39,3 +39,4 @@ next-env.d.ts
 .trd.md
 .schema.sql
 .supabase-config.md
+.env

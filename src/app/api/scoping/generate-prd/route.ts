@@ -99,6 +99,13 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', submissionId);
 
+    // Find existing user if they already logged in before
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', submission.email)
+      .single();
+
     // Create a project from this submission
     const { data: project } = await supabaseAdmin
       .from('projects')
@@ -110,6 +117,8 @@ export async function POST(req: NextRequest) {
         budget_range: submission.budget_range,
         ai_generated_prd: prd,
         status: 'discovery',
+        client_email: submission.email,
+        user_id: user?.id || null,
       })
       .select()
       .single();

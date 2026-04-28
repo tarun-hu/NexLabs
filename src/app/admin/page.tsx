@@ -16,9 +16,10 @@ const statusColors: Record<string, string> = {
   active: 'bg-green-500/10 text-green-400 border-green-500/20',
   completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   archived: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+  rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 
-const allStatuses = ['lead', 'discovery', 'quoted', 'active', 'completed', 'archived'];
+const allStatuses = ['lead', 'discovery', 'quoted', 'active', 'completed', 'archived', 'rejected'];
 
 interface QuoteModalProps {
   project: Record<string, unknown>;
@@ -32,8 +33,11 @@ function QuoteModal({ project, onClose, onSave }: QuoteModalProps) {
   const [status, setStatus] = useState((project.status as string) || 'lead');
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = async (overrideStatus?: string) => {
     setSaving(true);
+    const finalStatus = overrideStatus || status;
+    if (overrideStatus) setStatus(overrideStatus);
+
     try {
       const res = await fetch('/api/admin/update-quote', {
         method: 'POST',
@@ -42,7 +46,7 @@ function QuoteModal({ project, onClose, onSave }: QuoteModalProps) {
           projectId: project.id,
           quote_amount: amount ? Math.round(parseFloat(amount) * 100) : undefined,
           quote_notes: notes || undefined,
-          status,
+          status: finalStatus,
         }),
       });
 
@@ -127,9 +131,16 @@ function QuoteModal({ project, onClose, onSave }: QuoteModalProps) {
             Cancel
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => handleSave('rejected')}
             disabled={saving}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
+            className="flex-1 px-4 py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-medium hover:bg-red-500/20 transition-all disabled:opacity-50"
+          >
+            Reject
+          </button>
+          <button
+            onClick={() => handleSave()}
+            disabled={saving}
+            className="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

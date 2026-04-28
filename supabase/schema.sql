@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id),
+  client_email TEXT,
   status TEXT DEFAULT 'lead',
   title TEXT NOT NULL,
   idea_summary TEXT NOT NULL,
