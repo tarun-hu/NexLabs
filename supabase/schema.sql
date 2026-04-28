@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS scoping_submissions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT NOT NULL,
   name TEXT NOT NULL,
-  idea TEXT(500) NOT NULL,
+  idea VARCHAR(500) NOT NULL,
   vertical TEXT NOT NULL,
   timeline TEXT NOT NULL,
   budget_range TEXT NOT NULL,
