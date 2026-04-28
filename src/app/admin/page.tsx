@@ -158,6 +158,51 @@ function QuoteModal({ project, onClose, onSave }: QuoteModalProps) {
   );
 }
 
+export default function AdminPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const { data: projects, error, mutate } = useSWR('/api/admin/projects', fetcher);
+  const [selectedProject, setSelectedProject] = useState<Record<string, unknown> | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="animate-pulse text-slate-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    router.push('/login');
+    return null;
+  }
+
+  if (session.user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center text-white">
+        <div className="text-center">
+          <p className="text-red-400 text-xl font-semibold mb-2">Access Denied</p>
+          <p className="text-slate-500 mb-4">Admin access required</p>
+          <Link href="/dashboard" className="text-purple-400 hover:underline">Go to Dashboard</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredProjects = projects && Array.isArray(projects)
+    ? filterStatus === 'all'
+      ? projects
+      : projects.filter((p: Record<string, unknown>) => p.status === filterStatus)
+    : [];
+
+  const statusCounts = projects && Array.isArray(projects)
+    ? allStatuses.reduce((acc, s) => {
+        acc[s] = projects.filter((p: Record<string, unknown>) => p.status === s).length;
+        return acc;
+      }, {} as Record<string, number>)
+    : {};
+
   return (
     <main className="min-h-screen bg-[#07070a] text-white flex flex-col font-sans selection:bg-purple-500/30">
       {/* Premium Header */}
