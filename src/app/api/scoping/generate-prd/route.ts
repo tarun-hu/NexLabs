@@ -3,7 +3,7 @@ import { openai, PRD_MODEL, FALLBACK_MODEL } from '@/lib/openai';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const PRD_SYSTEM_PROMPT = `You are a technical co-founder helping scope a software project.
-Generate a structured 1-page PRD from the client's form submission.
+Generate a structured 1-page PRD from the client's form submission AND questionnaire answers.
 
 Output JSON format:
 {
@@ -11,6 +11,12 @@ Output JSON format:
   "problem_statement": string (1-2 sentences),
   "target_user": string,
   "core_features": [string] (3-5 features),
+  "screen_inventory": [string],
+  "user_flows": [string],
+  "success_metrics": string,
+  "out_of_scope": [string],
+  "development_phases": ["Phase 1: MVP", "Phase 2: ..."],
+  "design_system": string,
   "recommended_stack": string,
   "timeline_estimate": string,
   "complexity_score": number (1-10),
@@ -23,7 +29,7 @@ Output JSON format:
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { submissionId } = body;
+    const { submissionId, questionnaire_answers } = body;
 
     if (!submissionId) {
       return NextResponse.json({ error: 'submissionId required' }, { status: 400 });
@@ -40,13 +46,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
-    // Generate PRD with OpenAI
+    // Use questionnaire answers from request body if provided, otherwise from submission
+    const qa = questionnaire_answers || (submission.ai_prd_raw as Record<string, unknown>)?.questionnaire || {};
+
+    // Generate PRD with OpenAI using questionnaire data
     const userPrompt = `
-- Idea: ${submission.idea}
-- Vertical: ${submission.vertical}
-- Timeline: ${submission.timeline}
-- Budget: ${submission.budget_range}
-- Tech Preference: ${submission.tech_stack_preference || 'None specified'}
+Project Idea: ${submission.idea}
+Vertical: ${submission.vertical}
+Timeline: ${submission.timeline}
+Budget: ${submission.budget_range}
+
+Questionnaire Answers:
+- Primary User: ${qa.primary_user || 'Not specified'}
+- Pain Point: ${qa.user_pain_point || 'Not specified'}
+- Core Feature: ${qa.primary_feature || 'Not specified'}
+- Secondary Features: ${Array.isArray(qa.secondary_features) ? qa.secondary_features.join(', ') : qa.secondary_features || 'Not specified'}
+- Platform: ${Array.isArray(qa.platform) ? qa.platform.join(', ') : qa.platform || 'Not specified'}
+- Design Preference: ${qa.design_preference || 'Not specified'}
+- Timeline Urgency: ${qa.timeline_urgency || 'Not specified'}
+- Existing Tools: ${Array.isArray(qa.existing_tools) ? qa.existing_tools.join(', ') : qa.existing_tools || 'None'}
+- Success Metric: ${qa.success_metric || 'Not specified'}
+- Target Users (6mo): ${qa.target_users_count || 'Not specified'}
+- Out of Scope: ${Array.isArray(qa.out_of_scope) ? qa.out_of_scope.join(', ') : 'None specified'}
+- MVP Focus: ${qa.must_have_only || 'Not specified'}
+
+Generate a comprehensive PRD based on these requirements.
 `;
 
     let prdResult;
@@ -61,31 +85,16 @@ export async function POST(req: NextRequest) {
         temperature: 0.7,
       });
     } catch (openaiError) {
-      // Fallback to gpt-3.5-turbo
       console.warn('Primary model failed, using fallback:', openaiError);
-      try {
-        prdResult = await openai.chat.completions.create({
-          model: FALLBACK_MODEL,
-          messages: [
-            { role: 'system', content: PRD_SYSTEM_PROMPT },
-            { role: 'user', content: userPrompt },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.7,
-        });
-      } catch (fallbackError) {
-        console.error('Both models failed:', fallbackError);
-        // Mark as failed and return pending
-        await supabaseAdmin
-          .from('scoping_submissions')
-          .update({ ai_prd_status: 'failed' })
-          .eq('id', submissionId);
-
-        return NextResponse.json({
-          status: 'pending',
-          message: "AI review in progress — we'll respond within 24 hours",
-        });
-      }
+      prdResult = await openai.chat.completions.create({
+        model: FALLBACK_MODEL,
+        messages: [
+          { role: 'system', content: PRD_SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+      });
     }
 
     const prd = JSON.parse(prdResult.choices[0].message.content || '{}');
@@ -95,11 +104,11 @@ export async function POST(req: NextRequest) {
       .from('scoping_submissions')
       .update({
         ai_prd_status: 'generated',
-        ai_prd_raw: prd,
+        ai_prd_raw: { ...submission.ai_prd_raw, ...prd },
       })
       .eq('id', submissionId);
 
-    // Find existing user if they already logged in before
+    // Find existing user
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -116,11 +125,11 @@ export async function POST(req: NextRequest) {
         timeline: submission.timeline,
         budget_range: submission.budget_range,
         ai_generated_prd: prd,
-        status: 'quoted', // Setting to quoted since AI provides an initial quote
+        status: 'discovery',
         client_email: submission.email,
         user_id: user?.id || null,
-        quote_amount: prd.quote_range_low ? prd.quote_range_low * 100 : null, // Store in cents
-        quote_notes: prd.quote_range_low && prd.quote_range_high ? `AI Estimated Range: $${prd.quote_range_low.toLocaleString()} - $${prd.quote_range_high.toLocaleString()}\nThis is an initial AI estimate based on your PRD. Our team will review this shortly.` : null,
+        quote_amount: prd.quote_range_low ? prd.quote_range_low * 100 : null,
+        quote_notes: prd.quote_range_low && prd.quote_range_high ? `AI Estimated Range: $${prd.quote_range_low.toLocaleString()} - $${prd.quote_range_high.toLocaleString()}\nThis is an initial AI estimate. Our team will review and confirm pricing.` : null,
       })
       .select()
       .single();

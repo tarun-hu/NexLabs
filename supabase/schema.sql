@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS projects (
   budget_range TEXT NOT NULL,
   tech_stack_preference TEXT,
   ai_generated_prd JSONB,
+  technical_requirements JSONB,
+  trd_status TEXT DEFAULT 'pending',
   quote_amount INTEGER,
   quote_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),

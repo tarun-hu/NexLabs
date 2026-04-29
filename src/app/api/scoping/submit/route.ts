@@ -11,6 +11,7 @@ const scopingSchema = z.object({
   timeline: z.enum(['ASAP', '1 month', '2-3 months', 'Flexible']),
   budget_range: z.enum(['$2k-5k', '$5k-10k', '$10k-20k', '$20k-50k', '$50k+']),
   referral_source: z.string().optional(),
+  questionnaire_answers: z.any().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
         budget_range: validated.budget_range,
         referral_source: validated.referral_source,
         ai_prd_status: 'pending',
+        ai_prd_raw: validated.questionnaire_answers ? { questionnaire: validated.questionnaire_answers } : null,
       })
       .select()
       .single();

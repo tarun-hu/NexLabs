@@ -27,6 +27,269 @@ interface QuoteModalProps {
   onSave: () => void;
 }
 
+interface TRDModalProps {
+  project: Record<string, unknown>;
+  onClose: () => void;
+}
+
+interface TRD {
+  system_architecture?: string;
+  technology_stack?: Array<{ component: string; technology: string; why: string }>;
+  database_schema?: Array<{ table: string; fields: Array<{ name: string; type: string; description?: string }> }>;
+  api_design?: Array<{ name: string; method: string; endpoint: string; purpose: string }>;
+  development_checklist?: Array<{ day: string; tasks: string[] }>;
+  cost_estimate?: { free_tier_limit: number; cost_at_100_users: string; cost_at_1000_users: string; cost_at_10000_users: string };
+  required_env_vars?: Array<{ name: string; description: string; required?: boolean }>;
+  external_dependencies?: Array<{ name: string; purpose: string; free_tier: string }>;
+}
+
+function TRDModal({ project, onClose }: TRDModalProps) {
+  const trd = project.technical_requirements as TRD | null;
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/admin/generate-trd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert(result.error || 'Failed to generate TRD');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate TRD');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#07070a]/80 backdrop-blur-md px-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#0f0f13] border border-white/10 rounded-2xl p-8 w-full max-w-4xl my-8 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden max-h-[90vh] overflow-y-auto"
+      >
+        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 18v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Technical Requirements</h2>
+              <p className="text-sm text-slate-500">AI-generated architecture & implementation plan</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {!trd ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No TRD Generated</h3>
+            <p className="text-slate-400 mb-6">Generate a technical requirements document for this project.</p>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50"
+            >
+              {generating ? 'Generating...' : 'Generate TRD'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {trd?.system_architecture && (
+              <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                <h3 className="text-sm font-medium text-slate-400 mb-2">System Architecture</h3>
+                <p className="text-white">{trd.system_architecture}</p>
+              </div>
+            )}
+
+            {trd?.technology_stack && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Technology Stack</h3>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {trd.technology_stack.map((tech, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="font-semibold text-purple-400 mb-1">{tech.component}</div>
+                      <div className="text-white text-sm">{tech.technology}</div>
+                      <div className="text-slate-500 text-xs mt-1">{tech.why}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trd?.database_schema && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Database Schema</h3>
+                <div className="space-y-3">
+                  {trd.database_schema.map((table, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="font-mono text-purple-400 text-sm mb-2">{table.table}</div>
+                      {table.fields && (
+                        <div className="space-y-1">
+                          {table.fields.map((field, j) => (
+                            <div key={j} className="flex items-center gap-3 text-sm">
+                              <span className="font-mono text-white">{field.name}</span>
+                              <span className="text-slate-500">{field.type}</span>
+                              {field.description && <span className="text-slate-600">— {field.description}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trd?.api_design && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">API Endpoints</h3>
+                <div className="space-y-2">
+                  {trd.api_design.map((api, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-mono ${
+                          api.method === 'GET' ? 'bg-green-500/20 text-green-400' :
+                          api.method === 'POST' ? 'bg-blue-500/20 text-blue-400' :
+                          api.method === 'PUT' ? 'bg-amber-500/20 text-amber-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {api.method}
+                        </span>
+                        <span className="font-mono text-white text-sm">{api.endpoint}</span>
+                      </div>
+                      <div className="text-slate-400 text-sm">{api.purpose}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trd?.development_checklist && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Development Checklist</h3>
+                <div className="space-y-3">
+                  {trd.development_checklist.map((day, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="font-semibold text-purple-400 mb-2">{day.day}</div>
+                      {day.tasks && (
+                        <ul className="space-y-1">
+                          {day.tasks.map((task, j) => (
+                            <li key={j} className="flex items-start gap-2 text-sm text-slate-300">
+                              <span className="text-purple-400 mt-0.5">•</span>
+                              {task}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trd?.cost_estimate && (
+              <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Cost Estimate</h3>
+                <div className="grid grid-cols-4 gap-3">
+                  {trd.cost_estimate.free_tier_limit && (
+                    <div>
+                      <div className="text-xs text-slate-500">Free Tier</div>
+                      <div className="text-white font-medium">{trd.cost_estimate.free_tier_limit} users</div>
+                    </div>
+                  )}
+                  {trd.cost_estimate.cost_at_100_users && (
+                    <div>
+                      <div className="text-xs text-slate-500">100 users</div>
+                      <div className="text-white font-medium">{trd.cost_estimate.cost_at_100_users}</div>
+                    </div>
+                  )}
+                  {trd.cost_estimate.cost_at_1000_users && (
+                    <div>
+                      <div className="text-xs text-slate-500">1K users</div>
+                      <div className="text-white font-medium">{trd.cost_estimate.cost_at_1000_users}</div>
+                    </div>
+                  )}
+                  {trd.cost_estimate.cost_at_10000_users && (
+                    <div>
+                      <div className="text-xs text-slate-500">10K users</div>
+                      <div className="text-white font-medium">{trd.cost_estimate.cost_at_10000_users}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {trd?.required_env_vars && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">Environment Variables</h3>
+                <div className="space-y-2">
+                  {trd.required_env_vars.map((env, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="flex items-center justify-between mb-1">
+                        <code className="text-green-400 font-mono text-sm">{env.name}</code>
+                        {env.required && (
+                          <span className="text-xs px-2 py-0.5 bg-red-500/20 text-red-400 rounded border border-red-500/20">Required</span>
+                        )}
+                      </div>
+                      <p className="text-slate-400 text-sm">{env.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trd?.external_dependencies && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-400 mb-3">External Dependencies</h3>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {trd.external_dependencies.map((dep, i) => (
+                    <div key={i} className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                      <div className="font-semibold text-white mb-1">{dep.name}</div>
+                      <div className="text-slate-400 text-sm mb-2">{dep.purpose}</div>
+                      <div className="text-xs text-green-400">{dep.free_tier}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function QuoteModal({ project, onClose, onSave }: QuoteModalProps) {
   const [amount, setAmount] = useState(project.quote_amount ? String((project.quote_amount as number) / 100) : '');
   const [notes, setNotes] = useState((project.quote_notes as string) || '');
@@ -163,6 +426,7 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const { data: projects, error, mutate } = useSWR('/api/admin/projects', fetcher);
   const [selectedProject, setSelectedProject] = useState<Record<string, unknown> | null>(null);
+  const [selectedTRDProject, setSelectedTRDProject] = useState<Record<string, unknown> | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   if (status === 'loading') {
@@ -395,6 +659,18 @@ export default function AdminPage() {
                              <button
                                onClick={(e) => {
                                  e.preventDefault();
+                                 setSelectedTRDProject(project);
+                               }}
+                               className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                               title="View TRD"
+                             >
+                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                               </svg>
+                             </button>
+                             <button
+                               onClick={(e) => {
+                                 e.preventDefault();
                                  setSelectedProject(project);
                                }}
                                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -432,6 +708,16 @@ export default function AdminPage() {
             project={selectedProject}
             onClose={() => setSelectedProject(null)}
             onSave={() => mutate()}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* TRD Modal */}
+      <AnimatePresence>
+        {selectedTRDProject && (
+          <TRDModal
+            project={selectedTRDProject}
+            onClose={() => setSelectedTRDProject(null)}
           />
         )}
       </AnimatePresence>

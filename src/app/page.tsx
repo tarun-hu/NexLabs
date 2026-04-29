@@ -93,11 +93,183 @@ const stats = [
   { value: '4.9', label: 'Avg Rating' },
 ];
 
+const prdQuestions = [
+  {
+    category: 'Target Users',
+    questions: [
+      {
+        id: 'primary_user',
+        question: 'Who is your primary user?',
+        options: [
+          { label: 'Consumers (B2C)', description: 'Individual users, general public' },
+          { label: 'Businesses (B2B)', description: 'Companies, organizations' },
+          { label: 'Developers', description: 'Technical users, API consumers' },
+          { label: 'Internal Team', description: 'Your company employees' },
+        ],
+      },
+      {
+        id: 'user_pain_point',
+        question: 'What is their biggest pain point?',
+        options: [
+          { label: 'Time-consuming manual work', description: 'Processes that take too long' },
+          { label: 'Poor communication/collaboration', description: 'Teams struggling to work together' },
+          { label: 'Data scattered across tools', description: 'Information silos' },
+          { label: 'Expensive existing solutions', description: 'Current tools cost too much' },
+          { label: 'Complex/hard to use tools', description: 'Existing solutions are unintuitive' },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'Core Features',
+    questions: [
+      {
+        id: 'primary_feature',
+        question: 'What is the ONE core feature?',
+        options: [
+          { label: 'Dashboard/Analytics', description: 'Data visualization and insights' },
+          { label: 'Marketplace/Transactions', description: 'Buying, selling, payments' },
+          { label: 'Communication Tool', description: 'Chat, video, messaging' },
+          { label: 'Content Management', description: 'Creating, organizing content' },
+          { label: 'Automation/Workflow', description: 'Automating repetitive tasks' },
+          { label: 'AI-Powered Tool', description: 'ML/AI-driven features' },
+        ],
+      },
+      {
+        id: 'secondary_features',
+        question: 'What secondary features are needed?',
+        options: [
+          { label: 'User Authentication', description: 'Login, profiles, permissions' },
+          { label: 'File Uploads', description: 'Images, documents, media' },
+          { label: 'Notifications', description: 'Email, push, in-app alerts' },
+          { label: 'Search & Filters', description: 'Finding content quickly' },
+          { label: 'Reports/Exports', description: 'PDF, CSV, data exports' },
+          { label: 'Third-party Integrations', description: 'Connect to other tools' },
+        ],
+        multiSelect: true,
+      },
+    ],
+  },
+  {
+    category: 'Platform & Design',
+    questions: [
+      {
+        id: 'platform',
+        question: 'Which platform(s) do you need?',
+        options: [
+          { label: 'Web App', description: 'Desktop browser experience' },
+          { label: 'Mobile App (iOS)', description: 'Native iOS application' },
+          { label: 'Mobile App (Android)', description: 'Native Android application' },
+          { label: 'Responsive Web', description: 'Works on all devices' },
+        ],
+        multiSelect: true,
+      },
+      {
+        id: 'design_preference',
+        question: 'What design vibe fits your brand?',
+        options: [
+          { label: 'Minimal & Clean', description: 'Simple, lots of white space' },
+          { label: 'Bold & Colorful', description: 'Vibrant, energetic' },
+          { label: 'Professional/Corporate', description: 'Trustworthy, established' },
+          { label: 'Playful/Fun', description: 'Friendly, approachable' },
+          { label: 'Dark/Tech', description: 'Modern, developer-focused' },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'Technical Constraints',
+    questions: [
+      {
+        id: 'timeline_urgency',
+        question: 'How soon do you need this built?',
+        options: [
+          { label: 'ASAP (2-4 weeks)', description: 'Urgent MVP needed' },
+          { label: '1-2 months', description: 'Standard timeline' },
+          { label: '3-6 months', description: 'Flexible, can wait' },
+          { label: 'No rush', description: 'Quality over speed' },
+        ],
+      },
+      {
+        id: 'existing_tools',
+        question: 'Do you have existing accounts/credits?',
+        options: [
+          { label: 'Firebase', description: 'Google cloud platform' },
+          { label: 'AWS', description: 'Amazon Web Services' },
+          { label: 'Azure', description: 'Microsoft cloud' },
+          { label: 'OpenAI API', description: 'AI/ML credits' },
+          { label: 'None yet', description: 'Starting fresh' },
+        ],
+        multiSelect: true,
+      },
+    ],
+  },
+  {
+    category: 'Success Metrics',
+    questions: [
+      {
+        id: 'success_metric',
+        question: 'What defines success for this project?',
+        options: [
+          { label: 'User Signups', description: 'Number of registered users' },
+          { label: 'Revenue/Sales', description: 'Money generated' },
+          { label: 'User Engagement', description: 'Daily/Monthly active users' },
+          { label: 'Task Completion', description: 'Users achieving their goal' },
+          { label: 'Investor Interest', description: 'Funding/demonstration' },
+        ],
+      },
+      {
+        id: 'target_users_count',
+        question: 'How many users in the first 6 months?',
+        options: [
+          { label: '1-100 (Beta)', description: 'Small test group' },
+          { label: '100-1,000', description: 'Early adopters' },
+          { label: '1,000-10,000', description: 'Growing user base' },
+          { label: '10,000+', description: 'Mass market' },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'Scope Boundaries',
+    questions: [
+      {
+        id: 'out_of_scope',
+        question: 'What are you NOT building right now?',
+        options: [
+          { label: 'Payment Processing', description: 'No transactions yet' },
+          { label: 'Social Features', description: 'No sharing/following' },
+          { label: 'Mobile Apps', description: 'Web-only for now' },
+          { label: 'AI/ML Features', description: 'Rules-based only' },
+          { label: 'Admin Dashboard', description: 'No internal tools yet' },
+        ],
+        multiSelect: true,
+      },
+      {
+        id: 'must_have_only',
+        question: 'Should we focus on MVP only?',
+        options: [
+          { label: 'Yes, MVP only', description: 'Launch fast, iterate later' },
+          { label: 'Balanced approach', description: 'Core features + polish' },
+          { label: 'Full-featured', description: 'Complete solution at launch' },
+        ],
+      },
+    ],
+  },
+];
+
+interface Answers {
+  [key: string]: string | string[];
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [formStep, setFormStep] = useState<'basic' | 'questionnaire'>('basic');
+  const [answers, setAnswers] = useState<Answers>({});
+  const [basicData, setBasicData] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setMounted(true);
@@ -366,59 +538,38 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-8"
           >
             <span className="text-purple-400 text-sm font-medium tracking-wider uppercase">Get Started</span>
             <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Tell Us Your Idea
+              {formStep === 'basic' ? 'Tell Us Your Idea' : 'Customize Your PRD'}
             </h2>
             <p className="text-slate-400 text-lg">
-              Get a detailed AI-generated PRD and transparent quote within 24 hours
+              {formStep === 'basic'
+                ? 'Get a detailed AI-generated PRD and transparent quote within 24 hours'
+                : 'Answer a few questions to help us understand your requirements'}
             </p>
           </motion.div>
 
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setIsLoading(true);
-
-              const formData = new FormData(e.currentTarget);
-              const data = Object.fromEntries(formData);
-
-              try {
-                const res = await fetch('/api/scoping/submit', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(data),
+          {/* Basic Info Form */}
+          {formStep === 'basic' && (
+            <motion.form
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const data: Record<string, string> = {};
+                formData.forEach((value, key) => {
+                  data[key] = String(value);
                 });
-
-                const result = await res.json();
-
-                if (res.ok) {
-                  // Fire PRD generation in background (don't await)
-                  fetch('/api/scoping/generate-prd', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ submissionId: result.submissionId }),
-                  });
-
-                  router.push(`/success?id=${result.submissionId}`);
-                } else {
-                  alert(result.error?.[0]?.message || result.error?.message || 'Something went wrong');
-                }
-              } catch (error) {
-                console.error(error);
-                alert('Failed to submit. Please try again.');
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            className="bg-white/[0.02] backdrop-blur-sm p-8 md:p-10 rounded-2xl border border-white/10 space-y-6"
-          >
+                setBasicData(data);
+                setFormStep('questionnaire');
+              }}
+              className="bg-white/[0.02] backdrop-blur-sm p-8 md:p-10 rounded-2xl border border-white/10 space-y-6"
+            >
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Name *</label>
@@ -517,28 +668,155 @@ export default function HomePage() {
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full relative group bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-purple-500/25 hover:scale-[1.01]"
+              className="w-full relative group bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 hover:scale-[1.01]"
             >
-              <span className="relative z-10">
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  'Submit & Get Your PRD →'
-                )}
-              </span>
+              Next: Answer Questions →
             </button>
-
-            <p className="text-center text-slate-600 text-xs">
-              Free AI-generated PRD • No commitment • Response within 24 hours
-            </p>
           </motion.form>
+          )}
+
+          {/* Questionnaire Form */}
+          {formStep === 'questionnaire' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/[0.02] backdrop-blur-sm p-8 md:p-10 rounded-2xl border border-white/10"
+            >
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-400">Customizing your PRD</span>
+                  <span className="text-sm text-slate-500">{Object.keys(answers).length} / {prdQuestions.flatMap(c => c.questions).length} answered</span>
+                </div>
+                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style={{ width: `${(Object.keys(answers).length / prdQuestions.flatMap(c => c.questions).length) * 100}%` }} />
+                </div>
+              </div>
+
+              {prdQuestions.map((category, catIndex) => (
+                <div key={category.category} className="mb-8 last:mb-0">
+                  <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4">{category.category}</h3>
+                  <div className="space-y-6">
+                    {category.questions.map((q) => {
+                      const currentAnswer = answers[q.id];
+                      return (
+                        <div key={q.id}>
+                          <label className="block text-white font-medium mb-3">{q.question}</label>
+                          <div className="grid gap-3">
+                            {q.options.map((opt) => {
+                              const isSelected = Array.isArray(currentAnswer)
+                                ? (currentAnswer as string[]).includes(opt.label)
+                                : currentAnswer === opt.label;
+                              return (
+                                <button
+                                  key={opt.label}
+                                  type="button"
+                                  onClick={() => {
+                                    if (q.multiSelect) {
+                                      const current = (answers[q.id] as string[]) || [];
+                                      setAnswers({
+                                        ...answers,
+                                        [q.id]: current.includes(opt.label)
+                                          ? current.filter(l => l !== opt.label)
+                                          : [...current, opt.label],
+                                      });
+                                    } else {
+                                      setAnswers({ ...answers, [q.id]: opt.label });
+                                    }
+                                  }}
+                                  className={`text-left p-4 rounded-xl border transition-all ${
+                                    isSelected
+                                      ? 'bg-purple-500/10 border-purple-500/30'
+                                      : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className="font-medium text-white mb-0.5">{opt.label}</div>
+                                      <div className="text-sm text-slate-400">{opt.description}</div>
+                                    </div>
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                      isSelected ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
+                                    }`}>
+                                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setFormStep('basic')}
+                  className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsLoading(true);
+                    try {
+                      // First submit basic data + questionnaire to scoping
+                      const res = await fetch('/api/scoping/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          ...basicData,
+                          questionnaire_answers: answers,
+                        }),
+                      });
+
+                      const result = await res.json();
+
+                      if (res.ok) {
+                        // Generate PRD with questionnaire data
+                        const prdRes = await fetch('/api/scoping/generate-prd', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            submissionId: result.submissionId,
+                            questionnaire_answers: answers,
+                          }),
+                        });
+
+                        const prdResult = await prdRes.json();
+
+                        if (prdResult.projectId) {
+                          // Generate TRD in background
+                          fetch('/api/admin/generate-trd', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ projectId: prdResult.projectId }),
+                          });
+                          router.push(`/dashboard/${prdResult.projectId}`);
+                        } else {
+                          router.push(`/success?id=${result.submissionId}`);
+                        }
+                      } else {
+                        alert(result.error?.message || 'Something went wrong');
+                      }
+                    } catch (error) {
+                      console.error(error);
+                      alert('Failed to submit. Please try again.');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={Object.keys(answers).length < 6}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Generating PRD...' : 'Generate My PRD'}
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 
