@@ -9,7 +9,10 @@
       "Bash(mv nexlabs-temp/.* .)",
       "Bash(rmdir nexlabs-temp *)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(Get-Process -Name node -ErrorAction SilentlyContinue)",
+      "Bash(Stop-Process -Force)",
+      "PowerShell(Get-Process *)"
     ]
   }
 }

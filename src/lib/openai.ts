@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 
-export const PRD_MODEL = 'meta/llama-3.1-70b-instruct';
+// Fast models for quick generation (under 10 seconds)
+export const PRD_MODEL = 'meta/llama-3.1-8b-instruct';
+export const TRD_MODEL = 'meta/llama-3.1-8b-instruct';
 export const FALLBACK_MODEL = 'meta/llama-3.1-8b-instruct';
 
 // Lazy-initialize to avoid crashing at build time when env vars are missing

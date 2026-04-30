@@ -2,26 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { openai, PRD_MODEL, FALLBACK_MODEL } from '@/lib/openai';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-const PRD_SYSTEM_PROMPT = `You are a technical co-founder helping scope a software project.
-Generate a structured 1-page PRD from the client's form submission AND questionnaire answers.
+const PRD_SYSTEM_PROMPT = `You are an expert product manager helping me create a professional Product Requirements Document (PRD) for my app idea.
 
-Output JSON format:
+Generate a complete PRD using this exact structure:
+
+## 📊 Project Overview
+## 🎯 Product Vision
+## 👤 Target User
+## ✨ Core Features (numbered, with exact specs)
+## 📱 Screen Inventory
+## 🔄 Key User Flows (step-by-step)
+## 📊 Success Metrics
+## 🚫 Out of Scope
+## 🎯 Development Phases
+## 🔐 Privacy & Safety
+## ✅ Definition of Done
+## 🎨 Design System
+
+IMPORTANT RULES:
+- Be specific, not vague (exact numbers, colors, behaviors)
+- Focus on MVP (what's needed for launch, not nice-to-haves)
+- Make it "vibe coding ready" (AI tools can build from this)
+- Keep it realistic for solo developer in 1-2 weeks
+- No fluff - every line must be actionable
+
+Output as JSON with these exact keys:
 {
-  "product_name": string,
-  "problem_statement": string (1-2 sentences),
+  "project_overview": string,
+  "product_vision": string,
   "target_user": string,
-  "core_features": [string] (3-5 features),
+  "core_features": [{ "id": number, "name": string, "spec": string }],
   "screen_inventory": [string],
-  "user_flows": [string],
-  "success_metrics": string,
+  "user_flows": [{ "name": string, "steps": [string] }],
+  "success_metrics": [{ "metric": string, "target": string }],
   "out_of_scope": [string],
-  "development_phases": ["Phase 1: MVP", "Phase 2: ..."],
-  "design_system": string,
-  "recommended_stack": string,
+  "development_phases": [{ "phase": string, "description": string }],
+  "privacy_safety": [string],
+  "definition_of_done": [string],
+  "design_system": { "theme": string, "colors": string, "typography": string, "components": string },
   "timeline_estimate": string,
   "complexity_score": number (1-10),
-  "ai_features_suggested": [string],
-  "risks_and_considerations": [string],
   "quote_range_low": number,
   "quote_range_high": number
 }`;
@@ -83,6 +103,7 @@ Generate a comprehensive PRD based on these requirements.
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
+        max_tokens: 1500,
       });
     } catch (openaiError) {
       console.warn('Primary model failed, using fallback:', openaiError);
@@ -125,6 +146,7 @@ Generate a comprehensive PRD based on these requirements.
         timeline: submission.timeline,
         budget_range: submission.budget_range,
         ai_generated_prd: prd,
+        trd_status: 'pending', // Mark as pending so TRD endpoint knows PRD is ready
         status: 'discovery',
         client_email: submission.email,
         user_id: user?.id || null,

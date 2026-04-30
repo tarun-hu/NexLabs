@@ -65,3 +65,84 @@ export async function GET(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const projectId = params.id;
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
+    }
+
+    // Get user for role check
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id, role')
+      .eq('email', session.user.email)
+      .single();
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Fetch the project to check ownership and status
+    const { data: project, error: fetchError } = await supabaseAdmin
+      .from('projects')
+      .select('user_id, status')
+      .eq('id', projectId)
+      .single();
+
+    if (fetchError || !project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Check authorization:
+    // 1. Client can withdraw their own project (any status)
+    // 2. Admin can delete rejected projects
+    const isOwner = project.user_id === user.id;
+    const isAdmin = user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Admins can only delete rejected projects
+    if (isAdmin && project.status !== 'rejected') {
+      return NextResponse.json(
+        { error: 'Admins can only delete rejected projects' },
+        { status: 400 }
+      );
+    }
+
+    // Delete the project
+    const { error: deleteError } = await supabaseAdmin
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (deleteError) {
+      console.error('Failed to delete project:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Project deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete project error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete project' },
+      { status: 500 }
+    );
+  }
+}

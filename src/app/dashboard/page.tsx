@@ -5,6 +5,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -15,12 +16,40 @@ const statusColors: Record<string, string> = {
   active: 'bg-green-500/10 text-green-400 border-green-500/20',
   completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   archived: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+  rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { data: projects, error } = useSWR('/api/projects', fetcher);
+  const { data: projects, error, mutate } = useSWR('/api/projects', fetcher);
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+
+  const handleWithdraw = async (projectId: string) => {
+    if (!confirm('Are you sure you want to withdraw this project? This action cannot be undone.')) {
+      return;
+    }
+
+    setWithdrawingId(projectId);
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        mutate();
+        alert('Project withdrawn successfully');
+      } else {
+        alert(result.error || 'Failed to withdraw project');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to withdraw project');
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
 
   if (status === 'loading') {
     return (
@@ -170,6 +199,19 @@ export default function DashboardPage() {
                       )}
                     </div>
                   )}
+
+                  <div className="mt-4 pt-4 border-t border-white/5 flex justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleWithdraw(project.id as string);
+                      }}
+                      disabled={withdrawingId === project.id}
+                      className="text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {withdrawingId === project.id ? 'Withdrawing...' : 'Withdraw Project'}
+                    </button>
+                  </div>
                 </Link>
               </motion.div>
             ))}

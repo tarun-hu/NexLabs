@@ -267,9 +267,75 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [formStep, setFormStep] = useState<'basic' | 'questionnaire'>('basic');
+  const [formStep, setFormStep] = useState<'basic' | 'questionnaire' | 'submitting'>('basic');
   const [answers, setAnswers] = useState<Answers>({});
   const [basicData, setBasicData] = useState<Record<string, string>>({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  const handleSubmit = async () => {
+    setFormStep('submitting');
+    setIsLoading(true);
+    try {
+      // Step 1: Submit to scoping
+      const res = await fetch('/api/scoping/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...basicData,
+          questionnaire_answers: answers,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error?.message || 'Submission failed');
+      }
+
+      // Step 2: Generate PRD (creates project)
+      const prdRes = await fetch('/api/scoping/generate-prd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId: result.submissionId,
+          questionnaire_answers: answers,
+        }),
+      });
+
+      const prdResult = await prdRes.json();
+
+      if (prdResult.projectId) {
+        // Step 3: Wait for TRD to complete before redirecting
+        try {
+          const trdRes = await fetch('/api/admin/generate-trd', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: prdResult.projectId }),
+          });
+
+          const trdResult = await trdRes.json();
+
+          if (!trdRes.ok) {
+            console.warn('TRD generation failed:', trdResult.error);
+            // Still redirect even if TRD fails - admin can regenerate manually
+          }
+        } catch (trdError) {
+          console.warn('TRD request failed:', trdError);
+          // Continue even if TRD fails
+        }
+
+        // Redirect to project page
+        router.push(`/dashboard/${prdResult.projectId}`);
+      } else {
+        router.push(`/success?id=${result.submissionId}`);
+      }
+    } catch (error) {
+      console.error(error);
+      setFormStep('questionnaire');
+      setIsLoading(false);
+      alert('Failed to submit. Please try again.');
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -682,138 +748,124 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white/[0.02] backdrop-blur-sm p-8 md:p-10 rounded-2xl border border-white/10"
             >
-              <div className="mb-6">
+              <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-400">Customizing your PRD</span>
-                  <span className="text-sm text-slate-500">{Object.keys(answers).length} / {prdQuestions.flatMap(c => c.questions).length} answered</span>
+                  <span className="text-sm text-slate-400">Question {currentQuestionIndex + 1} of {prdQuestions.flatMap(c => c.questions).length}</span>
+                  <span className="text-sm text-slate-500">{Object.keys(answers).length} completed</span>
                 </div>
                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style={{ width: `${(Object.keys(answers).length / prdQuestions.flatMap(c => c.questions).length) * 100}%` }} />
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style={{ width: `${((currentQuestionIndex + 1) / prdQuestions.flatMap(c => c.questions).length) * 100}%` }} />
                 </div>
               </div>
 
-              {prdQuestions.map((category, catIndex) => (
-                <div key={category.category} className="mb-8 last:mb-0">
-                  <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4">{category.category}</h3>
-                  <div className="space-y-6">
-                    {category.questions.map((q) => {
-                      const currentAnswer = answers[q.id];
-                      return (
-                        <div key={q.id}>
-                          <label className="block text-white font-medium mb-3">{q.question}</label>
-                          <div className="grid gap-3">
-                            {q.options.map((opt) => {
-                              const isSelected = Array.isArray(currentAnswer)
-                                ? (currentAnswer as string[]).includes(opt.label)
-                                : currentAnswer === opt.label;
-                              return (
-                                <button
-                                  key={opt.label}
-                                  type="button"
-                                  onClick={() => {
-                                    if (q.multiSelect) {
-                                      const current = (answers[q.id] as string[]) || [];
-                                      setAnswers({
-                                        ...answers,
-                                        [q.id]: current.includes(opt.label)
-                                          ? current.filter(l => l !== opt.label)
-                                          : [...current, opt.label],
-                                      });
-                                    } else {
-                                      setAnswers({ ...answers, [q.id]: opt.label });
-                                    }
-                                  }}
-                                  className={`text-left p-4 rounded-xl border transition-all ${
-                                    isSelected
-                                      ? 'bg-purple-500/10 border-purple-500/30'
-                                      : 'bg-white/[0.02] border-white/5 hover:border-white/10'
-                                  }`}
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                      <div className="font-medium text-white mb-0.5">{opt.label}</div>
-                                      <div className="text-sm text-slate-400">{opt.description}</div>
-                                    </div>
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                      isSelected ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
-                                    }`}>
-                                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
+              {(() => {
+                const flatQuestions = prdQuestions.flatMap(c => c.questions);
+                const currentQuestion = flatQuestions[currentQuestionIndex];
+                const currentAnswer = answers[currentQuestion.id];
+                const currentCategory = prdQuestions.find(c => c.questions.some(q => q.id === currentQuestion.id));
+
+                return (
+                  <div key={currentQuestion.id}>
+                    <span className="inline-block px-3 py-1 bg-purple-500/10 text-purple-400 rounded-full text-xs font-medium border border-purple-500/20 mb-4">
+                      {currentCategory?.category}
+                    </span>
+                    <h3 className="text-xl font-semibold text-white mb-6">{currentQuestion.question}</h3>
+                    <div className="grid gap-3">
+                      {currentQuestion.options.map((opt) => {
+                        const isSelected = Array.isArray(currentAnswer)
+                          ? (currentAnswer as string[]).includes(opt.label)
+                          : currentAnswer === opt.label;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => {
+                              if (currentQuestion.multiSelect) {
+                                const current = (answers[currentQuestion.id] as string[]) || [];
+                                setAnswers({
+                                  ...answers,
+                                  [currentQuestion.id]: current.includes(opt.label)
+                                    ? current.filter(l => l !== opt.label)
+                                    : [...current, opt.label],
+                                });
+                              } else {
+                                setAnswers({ ...answers, [currentQuestion.id]: opt.label });
+                              }
+                            }}
+                            className={`text-left p-5 rounded-xl border transition-all ${
+                              isSelected
+                                ? 'bg-purple-500/10 border-purple-500/30 shadow-lg shadow-purple-500/10'
+                                : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="font-medium text-white mb-0.5">{opt.label}</div>
+                                <div className="text-sm text-slate-400">{opt.description}</div>
+                              </div>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                isSelected ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
+                              }`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex gap-3 mt-8">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (currentQuestionIndex > 0) {
+                            setCurrentQuestionIndex(prev => prev - 1);
+                          } else {
+                            setFormStep('basic');
+                          }
+                        }}
+                        className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (currentQuestionIndex < flatQuestions.length - 1) {
+                            setCurrentQuestionIndex(prev => prev + 1);
+                          } else {
+                            handleSubmit();
+                          }
+                        }}
+                        disabled={!currentAnswer || (Array.isArray(currentAnswer) && currentAnswer.length === 0)}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {currentQuestionIndex === flatQuestions.length - 1 ? 'Submit & Generate' : 'Next'}
+                      </button>
+                    </div>
                   </div>
+                );
+              })()}
+            </motion.div>
+          )}
+
+          {formStep === 'submitting' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white/[0.02] backdrop-blur-sm p-12 rounded-2xl border border-white/10 text-center"
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Generating Your PRD & TRD</h3>
+              <p className="text-slate-400 mb-8">Our AI is analyzing your requirements and creating a detailed technical specification...</p>
+              <div className="max-w-md mx-auto">
+                <div className="h-1 bg-white/5 rounded-full overflow-hidden mb-3">
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse" style={{ width: '60%' }} />
                 </div>
-              ))}
-
-              <div className="flex gap-3 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setFormStep('basic')}
-                  className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={async () => {
-                    setIsLoading(true);
-                    try {
-                      // First submit basic data + questionnaire to scoping
-                      const res = await fetch('/api/scoping/submit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          ...basicData,
-                          questionnaire_answers: answers,
-                        }),
-                      });
-
-                      const result = await res.json();
-
-                      if (res.ok) {
-                        // Generate PRD with questionnaire data
-                        const prdRes = await fetch('/api/scoping/generate-prd', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            submissionId: result.submissionId,
-                            questionnaire_answers: answers,
-                          }),
-                        });
-
-                        const prdResult = await prdRes.json();
-
-                        if (prdResult.projectId) {
-                          // Generate TRD in background
-                          fetch('/api/admin/generate-trd', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ projectId: prdResult.projectId }),
-                          });
-                          router.push(`/dashboard/${prdResult.projectId}`);
-                        } else {
-                          router.push(`/success?id=${result.submissionId}`);
-                        }
-                      } else {
-                        alert(result.error?.message || 'Something went wrong');
-                      }
-                    } catch (error) {
-                      console.error(error);
-                      alert('Failed to submit. Please try again.');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                  disabled={Object.keys(answers).length < 6}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Generating PRD...' : 'Generate My PRD'}
-                </button>
+                <p className="text-xs text-slate-500">This takes about 30-60 seconds</p>
               </div>
             </motion.div>
           )}

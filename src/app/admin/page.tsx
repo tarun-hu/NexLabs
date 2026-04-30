@@ -30,6 +30,7 @@ interface QuoteModalProps {
 interface TRDModalProps {
   project: Record<string, unknown>;
   onClose: () => void;
+  onGenerated: () => void;
 }
 
 interface TRD {
@@ -43,9 +44,12 @@ interface TRD {
   external_dependencies?: Array<{ name: string; purpose: string; free_tier: string }>;
 }
 
-function TRDModal({ project, onClose }: TRDModalProps) {
-  const trd = project.technical_requirements as TRD | null;
+function TRDModal({ project, onClose, onGenerated }: TRDModalProps) {
+  const trd = project.technical_requirements as TRD | null | undefined;
   const [generating, setGenerating] = useState(false);
+
+  // Check if trd is null, undefined, or empty object
+  const hasTrd = trd && typeof trd === 'object' && Object.keys(trd).length > 0;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -58,7 +62,9 @@ function TRDModal({ project, onClose }: TRDModalProps) {
 
       const result = await res.json();
       if (res.ok) {
-        window.location.reload();
+        // Trigger SWR to refetch the projects list
+        onGenerated();
+        onClose();
       } else {
         alert(result.error || 'Failed to generate TRD');
       }
@@ -106,7 +112,7 @@ function TRDModal({ project, onClose }: TRDModalProps) {
           </button>
         </div>
 
-        {!trd ? (
+        {!hasTrd ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -428,6 +434,33 @@ export default function AdminPage() {
   const [selectedProject, setSelectedProject] = useState<Record<string, unknown> | null>(null);
   const [selectedTRDProject, setSelectedTRDProject] = useState<Record<string, unknown> | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this rejected project? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingId(projectId);
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        mutate();
+        alert('Project deleted successfully');
+      } else {
+        alert(result.error || 'Failed to delete project');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete project');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (status === 'loading') {
     return (
@@ -689,6 +722,21 @@ export default function AdminPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                </svg>
                              </Link>
+                             {project.status === 'rejected' && (
+                               <button
+                                 onClick={(e) => {
+                                   e.preventDefault();
+                                   handleDelete(project.id as string);
+                                 }}
+                                 disabled={deletingId === project.id}
+                                 className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                 title="Delete Rejected Project"
+                               >
+                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                 </svg>
+                               </button>
+                             )}
                           </div>
                         </td>
                       </motion.tr>
@@ -718,6 +766,7 @@ export default function AdminPage() {
           <TRDModal
             project={selectedTRDProject}
             onClose={() => setSelectedTRDProject(null)}
+            onGenerated={() => mutate()}
           />
         )}
       </AnimatePresence>
