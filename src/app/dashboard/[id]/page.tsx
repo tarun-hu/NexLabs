@@ -177,12 +177,17 @@ export default function ProjectDetailPage() {
                     <div>
                       <h3 className="text-sm font-medium text-slate-400 mb-2">Core Features</h3>
                       <ul className="space-y-2">
-                        {prd.core_features.map((feature: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2 text-white">
-                            <span className="text-purple-400 mt-0.5">•</span>
-                            {feature}
-                          </li>
-                        ))}
+                        {prd.core_features.map((feature: string | { id: number; name: string; spec: string }, i: number) => {
+                          const label = typeof feature === 'object' && feature !== null
+                            ? `${feature.name}: ${feature.spec}`
+                            : feature;
+                          return (
+                            <li key={i} className="flex items-start gap-2 text-white">
+                              <span className="text-purple-400 mt-0.5">•</span>
+                              {label}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
