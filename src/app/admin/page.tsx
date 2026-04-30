@@ -436,6 +436,13 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Redirect inside useEffect — never call router.push during render
+  useEffect(() => {
+    if (status !== 'loading' && !session) {
+      router.push('/login');
+    }
+  }, [session, status, router]);
+
   const handleDelete = async (projectId: string) => {
     if (!confirm('Are you sure you want to delete this rejected project? This action cannot be undone.')) {
       return;
@@ -462,7 +469,7 @@ export default function AdminPage() {
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || (!session && status !== 'authenticated')) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="animate-pulse text-slate-500">Loading...</div>
@@ -470,10 +477,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!session) {
-    router.push('/login');
-    return null;
-  }
+  if (!session) return null;
 
   if (session.user?.role !== 'admin') {
     return (

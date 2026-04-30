@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const statusColors: Record<string, string> = {
@@ -32,7 +33,14 @@ export default function ProjectDetailPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [data?.messages]);
 
-  if (sessionStatus === 'loading') {
+  // Redirect unauthenticated users inside useEffect (not during render)
+  useEffect(() => {
+    if (sessionStatus !== 'loading' && !session) {
+      router.push('/login');
+    }
+  }, [session, sessionStatus, router]);
+
+  if (sessionStatus === 'loading' || (!session && sessionStatus !== 'authenticated')) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="animate-pulse text-slate-500">Loading...</div>
@@ -40,10 +48,7 @@ export default function ProjectDetailPage() {
     );
   }
 
-  if (!session) {
-    router.push('/login');
-    return null;
-  }
+  if (!session) return null;
 
   if (error) {
     return (

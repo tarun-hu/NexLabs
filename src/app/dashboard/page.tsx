@@ -5,7 +5,8 @@ import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -51,7 +52,14 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === 'loading') {
+  // Redirect inside useEffect — never call router.push during render
+  useEffect(() => {
+    if (status !== 'loading' && !session) {
+      router.push('/login');
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading' || (!session && status !== 'authenticated')) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="animate-pulse text-slate-500">Loading...</div>
@@ -59,10 +67,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!session) {
-    router.push('/login');
-    return null;
-  }
+  if (!session) return null;
 
   return (
     <main className="min-h-screen bg-[#0a0a0f] text-white">
