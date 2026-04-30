@@ -5,7 +5,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
