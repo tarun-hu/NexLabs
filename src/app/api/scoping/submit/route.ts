@@ -38,22 +38,26 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
-    // Send confirmation email
-    await resend.emails.send({
-      from: 'NexLabs <onboarding@resend.dev>',
-      to: [validated.email],
-      subject: 'Thanks for your submission!',
-      html: `
-        <h1>Thanks for reaching out, ${validated.name}!</h1>
-        <p>We've received your project idea and will review it shortly.</p>
-        <p><strong>Project:</strong> ${validated.idea}</p>
-        <p><strong>Vertical:</strong> ${validated.vertical}</p>
-        <p><strong>Timeline:</strong> ${validated.timeline}</p>
-        <p><strong>Budget:</strong> ${validated.budget_range}</p>
-        <p>Our AI is already analyzing your requirements. You'll receive a detailed PRD and quote within 24 hours.</p>
-        <p>Best,<br/>The NexLabs Team</p>
-      `,
-    });
+    // Send confirmation email (best-effort — don't crash the route if email fails)
+    try {
+      await resend.emails.send({
+        from: 'NexLabs <onboarding@resend.dev>',
+        to: [validated.email],
+        subject: 'Thanks for your submission!',
+        html: `
+          <h1>Thanks for reaching out, ${validated.name}!</h1>
+          <p>We've received your project idea and will review it shortly.</p>
+          <p><strong>Project:</strong> ${validated.idea}</p>
+          <p><strong>Vertical:</strong> ${validated.vertical}</p>
+          <p><strong>Timeline:</strong> ${validated.timeline}</p>
+          <p><strong>Budget:</strong> ${validated.budget_range}</p>
+          <p>Our AI is already analyzing your requirements. You'll receive a detailed PRD and quote within 24 hours.</p>
+          <p>Best,<br/>The NexLabs Team</p>
+        `,
+      });
+    } catch (emailErr) {
+      console.warn('Confirmation email failed (non-blocking):', emailErr);
+    }
 
     return NextResponse.json({ success: true, submissionId: submission.id });
   } catch (error) {

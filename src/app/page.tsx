@@ -275,6 +275,9 @@ export default function HomePage() {
   const handleSubmit = async () => {
     setFormStep('submitting');
     setIsLoading(true);
+    let submissionId: string | null = null;
+    let projectId: string | null = null;
+
     try {
       // Step 1: Submit to scoping
       const res = await fetch('/api/scoping/submit', {
@@ -286,54 +289,50 @@ export default function HomePage() {
         }),
       });
 
-      const result = await res.json();
-
       if (!res.ok) {
-        throw new Error(result.error?.message || 'Submission failed');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Submit failed (${res.status})`);
       }
 
-      // Step 2: Generate PRD (creates project)
+      const result = await res.json();
+      submissionId = result.submissionId;
+
+      // Step 2: Generate PRD (this will also create the project)
       const prdRes = await fetch('/api/scoping/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          submissionId: result.submissionId,
+          submissionId,
           questionnaire_answers: answers,
         }),
       });
 
-      const prdResult = await prdRes.json();
+      const prdResult = await prdRes.json().catch(() => ({}));
+      projectId = prdResult.projectId || null;
 
-      if (prdResult.projectId) {
-        // Step 3: Wait for TRD to complete before redirecting
+      if (projectId) {
+        // Step 3: Auto-generate TRD (best-effort, don't block redirect on failure)
         try {
-          const trdRes = await fetch('/api/admin/generate-trd', {
+          await fetch('/api/admin/generate-trd', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectId: prdResult.projectId }),
+            body: JSON.stringify({ projectId }),
           });
-
-          const trdResult = await trdRes.json();
-
-          if (!trdRes.ok) {
-            console.warn('TRD generation failed:', trdResult.error);
-            // Still redirect even if TRD fails - admin can regenerate manually
-          }
-        } catch (trdError) {
-          console.warn('TRD request failed:', trdError);
-          // Continue even if TRD fails
+        } catch (trdErr) {
+          console.warn('TRD generation failed (non-blocking):', trdErr);
         }
-
-        // Redirect to project page
-        router.push(`/dashboard/${prdResult.projectId}`);
+        // Redirect to dashboard
+        router.push(`/dashboard`);
+      } else if (submissionId) {
+        router.push(`/success?id=${submissionId}`);
       } else {
-        router.push(`/success?id=${result.submissionId}`);
+        throw new Error('No project or submission ID returned from server.');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Submission error:', error);
       setFormStep('questionnaire');
       setIsLoading(false);
-      alert('Failed to submit. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to submit. Please try again.');
     }
   };
 
