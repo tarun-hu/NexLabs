@@ -40,7 +40,7 @@ export default function ProjectDetailPage() {
     }
   }, [session, sessionStatus, router]);
 
-  if (sessionStatus === 'loading' || (!session && sessionStatus !== 'authenticated')) {
+  if (sessionStatus === 'loading') {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="animate-pulse text-slate-500">Loading...</div>

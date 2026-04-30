@@ -59,7 +59,7 @@ export default function DashboardPage() {
     }
   }, [session, status, router]);
 
-  if (status === 'loading' || (!session && status !== 'authenticated')) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="animate-pulse text-slate-500">Loading...</div>
