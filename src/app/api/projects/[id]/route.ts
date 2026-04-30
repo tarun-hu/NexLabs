@@ -34,12 +34,25 @@ export async function GET(
       .eq('id', id)
       .single();
 
-    if (projectError || !project) {
+    console.log('Project fetch result:', { project, projectError });
+
+    if (projectError) {
+      console.error('Project fetch error details:', projectError);
+      return NextResponse.json({ error: 'Project not found', details: projectError.message }, { status: 404 });
+    }
+
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     // Check authorization (owner or admin)
-    if (project.user_id !== user.id && user.role !== 'admin') {
+    // Also check client_email as fallback for projects without user_id
+    const isOwner = project.user_id === user.id || project.client_email === session.user.email;
+    const isAdmin = user.role === 'admin';
+
+    console.log('Auth check:', { projectUserId: project.user_id, userId: user.id, userRole: user.role, isOwner, isAdmin, clientEmail: project.client_email });
+
+    if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
